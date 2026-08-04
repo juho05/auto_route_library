@@ -326,6 +326,10 @@ class _SystemBackReporterState extends State<_SystemBackReporter> {
   void _scheduleReport() {
     if (_scheduled) return;
     _scheduled = true;
+    // a post-frame callback does not request a frame, so a state change that
+    // leaves the app idle, a PopScope that stops blocking for example, would
+    // never be reported
+    WidgetsBinding.instance.ensureVisualUpdate();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // the navigators flush their own history in post-frame callbacks too,
       // the microtask makes sure we read their state after all of them ran

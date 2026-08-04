@@ -7,6 +7,7 @@ import '../main_router.dart';
 import '../router_test_utils.dart';
 import '../nested_router/router.dart';
 import '../simple_router/router.dart';
+import '../test_page.dart';
 import 'router.dart';
 
 /// Records what auto_route reports to the platform through
@@ -211,6 +212,26 @@ void runNonTabsTests() {
       expect(await router.maybePopTop(), isTrue);
       await tester.pumpAndSettle();
       expect(recorder.last, isFalse);
+    },
+  );
+
+  testWidgets(
+    'A PopScope that changes while nothing animates is still reported',
+    (WidgetTester tester) async {
+      addTearDown(() => FirstPage.blockPop.value = false);
+      final router = SimpleRouter();
+      await pumpRouter(tester, router);
+      expect(recorder.last, isFalse);
+
+      // no navigation happens here, so nothing but the report itself asks for
+      // another frame
+      FirstPage.blockPop.value = true;
+      await tester.pumpAndSettle();
+      expect(recorder.last, isTrue, reason: 'the route blocks the pop now');
+
+      FirstPage.blockPop.value = false;
+      await tester.pumpAndSettle();
+      expect(recorder.last, isFalse, reason: 'and stopped blocking it');
     },
   );
 

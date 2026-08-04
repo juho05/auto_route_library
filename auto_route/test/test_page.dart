@@ -82,8 +82,26 @@ class NotFoundPage extends TestPage {
 }
 
 @RoutePage()
-class FirstPage extends TestPage {
+class FirstPage extends StatelessWidget {
   const FirstPage({super.key});
+
+  /// Blocks popping this page while it is on screen
+  ///
+  /// Lets a test change what the page reports to the platform without
+  /// navigating, reset it in a tearDown
+  static final ValueNotifier<bool> blockPop = ValueNotifier<bool>(false);
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: blockPop,
+      builder: (context, blocked, child) => PopScope(
+        canPop: !blocked,
+        child: child!,
+      ),
+      child: const TestPage(),
+    );
+  }
 }
 
 @RoutePage()
