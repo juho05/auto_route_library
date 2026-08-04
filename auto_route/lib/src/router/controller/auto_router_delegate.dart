@@ -262,27 +262,85 @@ class _AutoRootRouterState extends State<_AutoRootRouter> {
   @override
   Widget build(BuildContext context) {
     final stateHash = router.stateHash;
-    return RouterScope(
-      key: router.globalRouterKey,
-      controller: router,
-      navigatorObservers: widget.navigatorObservers,
-      inheritableObserversBuilder: widget.navigatorObserversBuilder,
-      stateHash: stateHash,
-      child: StackRouterScope(
-        stateHash: stateHash,
+    // sits above RouterScope so its own notification is not swallowed
+    // by the listeners AutoRouteNavigator installs below
+    return _SystemBackReporter(
+      router: router,
+      child: RouterScope(
+        key: router.globalRouterKey,
         controller: router,
-        child: AutoRouteNavigator(
-          router: router,
-          clipBehavior: widget.clipBehavior,
-          key: GlobalObjectKey(widget.router.hashCode),
-          placeholder: widget.placeholder,
-          navRestorationScopeId: widget.navRestorationScopeId,
-          navigatorObservers: widget.navigatorObservers,
-          routeTraversalEdgeBehavior: widget.routeTraversalEdgeBehavior,
+        navigatorObservers: widget.navigatorObservers,
+        inheritableObserversBuilder: widget.navigatorObserversBuilder,
+        stateHash: stateHash,
+        child: StackRouterScope(
+          stateHash: stateHash,
+          controller: router,
+          child: AutoRouteNavigator(
+            router: router,
+            clipBehavior: widget.clipBehavior,
+            key: GlobalObjectKey(widget.router.hashCode),
+            placeholder: widget.placeholder,
+            navRestorationScopeId: widget.navRestorationScopeId,
+            navigatorObservers: widget.navigatorObservers,
+            routeTraversalEdgeBehavior: widget.routeTraversalEdgeBehavior,
+          ),
         ),
       ),
     );
   }
+}
+
+/// Reports [RoutingController.canHandleSystemBack] of the active branch
+/// to the platform, this is the only [NavigationNotification] auto_route lets
+/// through so the reported value always mirrors [RoutingController.maybePopTop]
+class _SystemBackReporter extends StatefulWidget {
+  const _SystemBackReporter({required this.router, required this.child});
+
+  final StackRouter router;
+  final Widget child;
+
+  @override
+  State<_SystemBackReporter> createState() => _SystemBackReporterState();
+}
+
+class _SystemBackReporterState extends State<_SystemBackReporter> {
+  bool _scheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.router.addListener(_scheduleReport);
+    widget.router.navigationHistory.addListener(_scheduleReport);
+    widget.router.root._backHandlingStateTick.addListener(_scheduleReport);
+    _scheduleReport();
+  }
+
+  @override
+  void dispose() {
+    widget.router.removeListener(_scheduleReport);
+    widget.router.navigationHistory.removeListener(_scheduleReport);
+    widget.router.root._backHandlingStateTick.removeListener(_scheduleReport);
+    super.dispose();
+  }
+
+  void _scheduleReport() {
+    if (_scheduled) return;
+    _scheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // the navigators flush their own history in post-frame callbacks too,
+      // the microtask makes sure we read their state after all of them ran
+      scheduleMicrotask(() {
+        _scheduled = false;
+        if (!mounted) return;
+        NavigationNotification(
+          canHandlePop: widget.router.canHandleSystemBack,
+        ).dispatch(context);
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Holds deep-link information

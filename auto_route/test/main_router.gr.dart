@@ -264,17 +264,51 @@ class Tab2Nested1Route extends PageRouteInfo<void> {
 
 /// generated route for
 /// [Tab2Nested2Page]
-class Tab2Nested2Route extends PageRouteInfo<void> {
-  const Tab2Nested2Route({List<PageRouteInfo>? children}) : super(Tab2Nested2Route.name, initialChildren: children);
+class Tab2Nested2Route extends PageRouteInfo<Tab2Nested2RouteArgs> {
+  Tab2Nested2Route({
+    Key? key,
+    bool blockPop = false,
+    List<PageRouteInfo>? children,
+  }) : super(
+          Tab2Nested2Route.name,
+          args: Tab2Nested2RouteArgs(key: key, blockPop: blockPop),
+          initialChildren: children,
+        );
 
   static const String name = 'Tab2Nested2Route';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const Tab2Nested2Page();
+      final args = data.argsAs<Tab2Nested2RouteArgs>(
+        orElse: () => const Tab2Nested2RouteArgs(),
+      );
+      return Tab2Nested2Page(key: args.key, blockPop: args.blockPop);
     },
   );
+}
+
+class Tab2Nested2RouteArgs {
+  const Tab2Nested2RouteArgs({this.key, this.blockPop = false});
+
+  final Key? key;
+
+  final bool blockPop;
+
+  @override
+  String toString() {
+    return 'Tab2Nested2RouteArgs{key: $key, blockPop: $blockPop}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! Tab2Nested2RouteArgs) return false;
+    return key == other.key && blockPop == other.blockPop;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ blockPop.hashCode;
 }
 
 /// generated route for
@@ -344,6 +378,7 @@ class TabsHostRoute extends PageRouteInfo<TabsHostRouteArgs> {
     Key? key,
     String tabsType = 'IndexedStack',
     bool useDefaultRoutes = false,
+    int homeIndex = -1,
     List<PageRouteInfo>? children,
   }) : super(
           TabsHostRoute.name,
@@ -351,6 +386,7 @@ class TabsHostRoute extends PageRouteInfo<TabsHostRouteArgs> {
             key: key,
             tabsType: tabsType,
             useDefaultRoutes: useDefaultRoutes,
+            homeIndex: homeIndex,
           ),
           rawQueryParams: {
             'tabsType': tabsType,
@@ -375,6 +411,7 @@ class TabsHostRoute extends PageRouteInfo<TabsHostRouteArgs> {
         key: args.key,
         tabsType: args.tabsType,
         useDefaultRoutes: args.useDefaultRoutes,
+        homeIndex: args.homeIndex,
       );
     },
   );
@@ -385,6 +422,7 @@ class TabsHostRouteArgs {
     this.key,
     this.tabsType = 'IndexedStack',
     this.useDefaultRoutes = false,
+    this.homeIndex = -1,
   });
 
   final Key? key;
@@ -393,20 +431,25 @@ class TabsHostRouteArgs {
 
   final bool useDefaultRoutes;
 
+  final int homeIndex;
+
   @override
   String toString() {
-    return 'TabsHostRouteArgs{key: $key, tabsType: $tabsType, useDefaultRoutes: $useDefaultRoutes}';
+    return 'TabsHostRouteArgs{key: $key, tabsType: $tabsType, useDefaultRoutes: $useDefaultRoutes, homeIndex: $homeIndex}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! TabsHostRouteArgs) return false;
-    return key == other.key && tabsType == other.tabsType && useDefaultRoutes == other.useDefaultRoutes;
+    return key == other.key &&
+        tabsType == other.tabsType &&
+        useDefaultRoutes == other.useDefaultRoutes &&
+        homeIndex == other.homeIndex;
   }
 
   @override
-  int get hashCode => key.hashCode ^ tabsType.hashCode ^ useDefaultRoutes.hashCode;
+  int get hashCode => key.hashCode ^ tabsType.hashCode ^ useDefaultRoutes.hashCode ^ homeIndex.hashCode;
 }
 
 /// generated route for

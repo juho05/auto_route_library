@@ -93,19 +93,28 @@ class AutoRouteNavigatorState extends State<AutoRouteNavigator> {
   @override
   Widget build(BuildContext context) {
     return widget.router.hasEntries
-        ? Navigator(
-            key: widget.router.navigatorKey,
-            clipBehavior: widget.clipBehavior,
-            routeTraversalEdgeBehavior: widget.routeTraversalEdgeBehavior ?? kDefaultRouteTraversalEdgeBehavior,
-            observers: [widget.router.pagelessRoutesObserver, ...widget.navigatorObservers],
-            restorationScopeId: widget.navRestorationScopeId ?? widget.router.routeData.restorationId,
-            pages: widget.router.stack,
-            onDidRemovePage: (page) {
-              if (page is AutoRoutePage) {
-                widget.router.onPopPage(page);
-                widget.didPop?.call(page.routeData.route, page);
-              }
+        ? NotificationListener<NavigationNotification>(
+            // sibling navigators of inactive tabs would otherwise keep
+            // overwriting the platform flag, the root router re-reports
+            // this for the active branch only
+            onNotification: (notification) {
+              widget.router.updateLocalCanHandlePop(notification.canHandlePop);
+              return true;
             },
+            child: Navigator(
+              key: widget.router.navigatorKey,
+              clipBehavior: widget.clipBehavior,
+              routeTraversalEdgeBehavior: widget.routeTraversalEdgeBehavior ?? kDefaultRouteTraversalEdgeBehavior,
+              observers: [widget.router.pagelessRoutesObserver, ...widget.navigatorObservers],
+              restorationScopeId: widget.navRestorationScopeId ?? widget.router.routeData.restorationId,
+              pages: widget.router.stack,
+              onDidRemovePage: (page) {
+                if (page is AutoRoutePage) {
+                  widget.router.onPopPage(page);
+                  widget.didPop?.call(page.routeData.route, page);
+                }
+              },
+            ),
           )
         : widget.placeholder?.call(context) ??
             Container(

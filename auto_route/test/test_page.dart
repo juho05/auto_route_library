@@ -122,8 +122,16 @@ class Tab2Nested1Page extends TestPage {
 }
 
 @RoutePage()
-class Tab2Nested2Page extends TestPage {
-  const Tab2Nested2Page({super.key});
+class Tab2Nested2Page extends StatelessWidget {
+  const Tab2Nested2Page({super.key, this.blockPop = false});
+
+  final bool blockPop;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!blockPop) return const TestPage();
+    return const PopScope(canPop: false, child: TestPage());
+  }
 }
 
 @RoutePage()
@@ -140,11 +148,13 @@ class Tab3Nested2Page extends TestPage {
 class TabsHostPage extends StatelessWidget {
   final String tabsType;
   final bool useDefaultRoutes;
+  final int homeIndex;
 
   const TabsHostPage({
     super.key,
     @queryParam this.tabsType = 'IndexedStack',
     @queryParam this.useDefaultRoutes = false,
+    this.homeIndex = -1,
   });
 
   @override
@@ -160,18 +170,21 @@ class TabsHostPage extends StatelessWidget {
     if (tabsType == 'IndexedStack') {
       return AutoTabsRouter(
         routes: routes,
+        homeIndex: homeIndex,
       );
     }
 
     if (tabsType == 'PageView') {
       return AutoTabsRouter.pageView(
         routes: routes,
+        homeIndex: homeIndex,
       );
     }
 
     if (tabsType == 'TabBar') {
       return AutoTabsRouter.tabBar(
         routes: routes,
+        homeIndex: homeIndex,
       );
     }
 

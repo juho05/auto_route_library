@@ -50,6 +50,26 @@ typedef NavigatorObserversBuilder = List<NavigatorObserver> Function();
 abstract class RoutingController with ChangeNotifier {
   final _childControllers = <RoutingController>[];
   bool _ignorePopCompleter = false;
+  bool _localCanHandlePop = false;
+
+  /// Bumped whenever any controller in the hierarchy updates its
+  /// local back-handling state, only the [root]'s instance is listened to
+  final _backHandlingStateTick = ValueNotifier<int>(0);
+
+  /// Records what the [Navigator] owned by this controller reported
+  /// through its [NavigationNotification]
+  @internal
+  void updateLocalCanHandlePop(bool value) {
+    if (_localCanHandlePop == value) return;
+    _localCanHandlePop = value;
+    root._backHandlingStateTick.value++;
+  }
+
+  @override
+  void dispose() {
+    _backHandlingStateTick.dispose();
+    super.dispose();
+  }
 
   /// Whether [AutoRoutePage] should await for pop-completer
   bool get ignorePopCompleters => root._ignorePopCompleter;
@@ -510,6 +530,26 @@ abstract class RoutingController with ChangeNotifier {
   /// Calls [maybePop] on the controller with the top-most visible page
   @optionalTypeArgs
   Future<bool> maybePopTop<T extends Object?>([T? result]) => _topMostRouter().maybePop<T>(result);
+
+  /// Whether [maybePopTop] will handle a system back press
+  ///
+  /// This is what's reported to the platform, so every branch that makes
+  /// [maybePop] return true needs a matching branch here or the platform
+  /// will close the app instead of asking the framework
+  ///
+  /// Only the active branch is walked, so pop-able pages sitting in
+  /// inactive tabs are correctly invisible to the result
+  bool get canHandleSystemBack {
+    RoutingController? ctrl = this;
+    while (ctrl != null) {
+      if (ctrl._localCanHandlePop) return true;
+      if (ctrl is TabsRouter && ctrl.homeIndex != -1 && ctrl.activeIndex != ctrl.homeIndex) {
+        return true;
+      }
+      ctrl = ctrl._topInnerControllerOf(ctrl.currentChild?.key);
+    }
+    return false;
+  }
 
   /// Clients can either pop their own [_pages] stack
   /// or defer the call to a parent controller
