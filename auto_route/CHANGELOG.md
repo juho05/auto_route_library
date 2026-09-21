@@ -1,3 +1,5 @@
+## 11.2.0
+- **CHORE:** Migrate to material_ui and cupertino_ui packages
 ## 11.1.0
 - **CHORE:** deprecate animatePageTransition #2301
 - **Enhance:** add .named constructor to PageRouteInfo and AutoRoute to enable usage for shorthand
